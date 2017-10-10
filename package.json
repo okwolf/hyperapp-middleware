@@ -1,6 +1,6 @@
 {
   "name": "hyperapp-middleware",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Build HOAs for Hyperapp",
   "main": "dist/middleware.js",
   "jsnext:main": "src/index.js",
@@ -9,6 +9,10 @@
     "type": "git",
     "url": "git+https://github.com/okwolf/hyperapp-middleware.git"
   },
+  "files": [
+    "src",
+    "dist"
+  ],
   "scripts": {
     "test": "jest --coverage --no-cache",
     "build": "npm run bundle && npm run minify",
