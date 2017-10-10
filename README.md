@@ -116,14 +116,19 @@ Here is an example of using `makeResolve` to support actions returning a `Promis
 
 ```js
 enhance([
-  makeResolve(() => (state, actions, result) => {
-    return result
-      && typeof result.then === "function"
-      ? update => result.then(update)
-      : result
-  }),
-  ...
+  makeResolve(
+    // Notice that action.name and action.data are available
+    // to inform you about the action that returned this result.
+    action =>
+      // This is the Resolve function
+      (state, actions, result) =>
+        // Always return what the new result should be for this action
+        result && typeof result.then === "function"
+          ? update => result.then(update)
+          : result
+  ),
   // Other middleware for fun & profit
+  ...
 ])(app)({
 ...
 })
@@ -141,15 +146,23 @@ makeUpdate = function(Updater): HOAc
 
 #### Usage
 
+Here is an example of using `makeUpdate` to only allow state updates that include the `valid` property.
+
 ```js
 enhance(
-  makeUpdate(() => (state, actions, nextState) => {
-    // Return what you want the updated state to be
-    // Use state if you want to leave the current value unchanged
-    // Use nextState if the update is valid
-    // Use another value if you need to normalize
-    // the new state value.
-  }),
+  makeUpdate(
+    // Notice that action.name and action.data are available
+    // to inform you about the action that led to this state update.
+    action =>
+      // This is the Update function
+      (state, actions, nextState) =>
+        // Return what you want the updated state to be
+        // Use state if you want to leave the current value unchanged
+        // Use nextState if the update is valid
+        // Use another value if you need to normalize
+        // the new state value.
+        nextState.valid ? nextState : state
+  ),
   ...
 )(app)({
 ...
