@@ -3,14 +3,12 @@ import { enhance, makeUpdate } from "../src"
 
 test("optional updater", done => {
   let expectedActionName = "start"
-  const appActions = app(
-    enhance(
-      makeUpdate(action => {
-        expect(action.name).toBe(expectedActionName)
-        expectedActionName = expectedActionName === "start" ? "async" : "stop"
-      })
-    )
-  )({
+  const appActions = enhance(
+    makeUpdate(action => {
+      expect(action.name).toBe(expectedActionName)
+      expectedActionName = expectedActionName === "start" ? "async" : "stop"
+    })
+  )(app)({
     actions: {
       start: (state, actions, data) => data,
       async: (state, actions, data) => update => update(data),
@@ -26,16 +24,14 @@ test("optional updater", done => {
 })
 
 test("receives current and next state", done =>
-  app(
-    enhance(
-      makeUpdate(action => (state, actions, nextState) => {
-        expect(action.name).toBe("inc")
-        expect(state).toEqual({ count: 0 })
-        expect(nextState).toEqual({ count: 2 })
-        done()
-      })
-    )
-  )({
+  enhance(
+    makeUpdate(action => (state, actions, nextState) => {
+      expect(action.name).toBe("inc")
+      expect(state).toEqual({ count: 0 })
+      expect(nextState).toEqual({ count: 2 })
+      done()
+    })
+  )(app)({
     state: {
       count: 0
     },
@@ -45,26 +41,24 @@ test("receives current and next state", done =>
   }).inc({ by: 2 }))
 
 test("validate sync and async state updates", done => {
-  const appActions = app(
-    enhance([
-      makeUpdate(action => (state, actions, nextState) =>
-        nextState && typeof nextState.value !== "string" ? state : nextState
-      ),
-      makeUpdate(action => (state, actions, nextState) => {
-        switch (action.name) {
-          case "set":
-          case "setAsync":
-            expect(state).toEqual({ value: "foo" })
-            expect(nextState).toEqual({ value: null })
-            break
-          case "legitSet":
-            expect(state).toEqual({ value: "foo" })
-            expect(nextState).toEqual({ value: "legit" })
-        }
-        return nextState
-      })
-    ])
-  )({
+  const appActions = enhance([
+    makeUpdate(action => (state, actions, nextState) =>
+      nextState && typeof nextState.value !== "string" ? state : nextState
+    ),
+    makeUpdate(action => (state, actions, nextState) => {
+      switch (action.name) {
+        case "set":
+        case "setAsync":
+          expect(state).toEqual({ value: "foo" })
+          expect(nextState).toEqual({ value: null })
+          break
+        case "legitSet":
+          expect(state).toEqual({ value: "foo" })
+          expect(nextState).toEqual({ value: "legit" })
+      }
+      return nextState
+    })
+  ])(app)({
     state: {
       value: "foo"
     },

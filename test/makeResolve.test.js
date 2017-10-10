@@ -2,13 +2,11 @@ import { app } from "hyperapp"
 import { enhance, makeResolve } from "../src"
 
 test("optional resolver", done =>
-  app(
-    enhance(
-      makeResolve(action => {
-        expect(action.name).toBe("init")
-      })
-    )
-  )({
+  enhance(
+    makeResolve(action => {
+      expect(action.name).toBe("init")
+    })
+  )(app)({
     actions: {
       init(state, actions, data) {
         expect(data).toEqual({ some: "data" })
@@ -27,7 +25,7 @@ const chainActionWithData = (sourceName, targetName, data) =>
   )
 
 test("trigger chained action", done =>
-  app(chainActionWithData("foo", "bar", { baz: "foobar" }))({
+  chainActionWithData("foo", "bar", { baz: "foobar" })(app)({
     actions: {
       foo: (state, actions, data) => {
         expect(data).toEqual({ bar: "baz" })
@@ -46,31 +44,29 @@ const withPromise = makeResolve(() => (state, actions, result) => {
 })
 
 test("add Promise support", done => {
-  const appActions = app(
-    enhance([
-      withPromise,
-      action => (state, actions, data) => {
-        switch (action.name) {
-          case "upSync":
-            expect(state).toEqual({ count: 0 })
-            expect(data).toEqual({ by: 3 })
-            break
-          case "upPromise":
-            expect(state).toEqual({ count: 3 })
-            expect(data).toEqual({ by: 2 })
-            break
-          case "downSync":
-            expect(state).toEqual({ count: 5 })
-            expect(data).toEqual({ by: 1 })
-            break
-          case "downPromise":
-            expect(state).toEqual({ count: 4 })
-            expect(data).toEqual({ by: 4 })
-        }
-        return action(state, actions, data)
+  const appActions = enhance([
+    withPromise,
+    action => (state, actions, data) => {
+      switch (action.name) {
+        case "upSync":
+          expect(state).toEqual({ count: 0 })
+          expect(data).toEqual({ by: 3 })
+          break
+        case "upPromise":
+          expect(state).toEqual({ count: 3 })
+          expect(data).toEqual({ by: 2 })
+          break
+        case "downSync":
+          expect(state).toEqual({ count: 5 })
+          expect(data).toEqual({ by: 1 })
+          break
+        case "downPromise":
+          expect(state).toEqual({ count: 4 })
+          expect(data).toEqual({ by: 4 })
       }
-    ])
-  )({
+      return action(state, actions, data)
+    }
+  ])(app)({
     state: {
       count: 0
     },
