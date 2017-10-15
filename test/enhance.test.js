@@ -69,7 +69,7 @@ test("skip action", done => {
         throw new Error("should be skipped by middleware!")
       },
       bar: {
-        baz: done
+        baz: () => done()
       }
     }
   })
