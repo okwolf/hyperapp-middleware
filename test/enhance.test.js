@@ -28,7 +28,7 @@ test("explicit passthrough", done =>
 
 test("receives action, state slice, actions, and action data", done =>
   enhance(action => (state, actions, data) => {
-    expect(action.name).toBe("fizz")
+    expect(action.name).toBe("foo.fizz")
     expect(state).toEqual({ bar: "baz" })
 
     expect(actions).toEqual({
@@ -120,3 +120,42 @@ test("multiple middleware", done => {
     }
   }).init({ foo: "bar" })
 })
+
+test("state slices", done =>
+  enhance(action => (state, actions, data) => {
+    switch (action.name) {
+      case "hello":
+        expect(state).toEqual({ slice: { value: 0 } })
+        break
+      case "slice.up":
+        expect(state).toEqual({ value: 0 })
+        break
+      case "slice.upWithThunk":
+        expect(state).toEqual({ value: 1 })
+        expect(data).toBe(2)
+        done()
+        break
+      default:
+        throw new Error(`Unexpected action: ${action.name}`)
+    }
+    return action(state, actions, data)
+  })(app)({
+    state: {
+      slice: {
+        value: 0
+      }
+    },
+    actions: {
+      hello: () => ({ message: "hello" }),
+      slice: {
+        up: state => ({ value: state.value + 1 }),
+        upWithThunk: (state, actions, data) => update =>
+          update({ value: state.value + data })
+      }
+    },
+    init(state, actions) {
+      actions.hello()
+      actions.slice.up()
+      actions.slice.upWithThunk(2)
+    }
+  }))
