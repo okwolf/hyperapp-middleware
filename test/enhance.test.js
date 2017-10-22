@@ -138,6 +138,7 @@ test("state slices", done =>
       default:
         throw new Error(`Unexpected action: ${action.name}`)
     }
+
     return action(state, actions, data)
   })(app)({
     state: {
@@ -159,3 +160,71 @@ test("state slices", done =>
       actions.slice.upWithThunk(2)
     }
   }))
+
+test("modules", done => {
+  const foo = {
+    state: {
+      value: 0
+    },
+    actions: {
+      up: (state, actions, data) => ({ value: state.value + data })
+    },
+    modules: {
+      bar: {
+        state: {
+          text: "hello"
+        },
+        actions: {
+          change: (state, actions, text) => ({ text })
+        }
+      }
+    }
+  }
+
+  enhance(action => (state, actions, data) => {
+    switch (action.name) {
+      case "hello":
+        expect(state).toEqual({
+          message: "",
+          foo: { value: 0, bar: { text: "hello" } }
+        })
+        expect(data).toBe("hello world")
+        break
+      case "foo.up":
+        expect(state).toEqual({
+          value: 0,
+          bar: {
+            text: "hello"
+          }
+        })
+        expect(data).toBe(3)
+        break
+      case "foo.bar.change":
+        expect(state).toEqual({
+          text: "hello"
+        })
+        expect(data).toBe("hola")
+        done()
+        break
+      default:
+        throw new Error(`Unexpected action: ${action.name}`)
+    }
+
+    return action(state, actions, data)
+  })(app)({
+    state: {
+      message: ""
+    },
+    actions: {
+      hello: (state, actions, message) => ({ message })
+    },
+    modules: {
+      foo
+    },
+    init(state, actions) {
+      actions.hello("hello world")
+      actions.foo.up(3)
+      actions.foo.bar.change("hola")
+    }
+  })
+})

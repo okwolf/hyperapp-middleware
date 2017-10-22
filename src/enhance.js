@@ -32,9 +32,17 @@ export default function(middleware) {
       return otherActions
     }, {})
   }
+  function enhanceModules(module, prefix) {
+    var namespace = prefix ? prefix + "." : ""
+    module.actions = enhanceActions(module.actions, prefix)
+
+    Object.keys(module.modules || {}).map(function(name) {
+      enhanceModules(module.modules[name], namespace + name)
+    })
+  }
   return function(app) {
     return function(props) {
-      props.actions = enhanceActions(props.actions)
+      enhanceModules(props)
       return app(props)
     }
   }
