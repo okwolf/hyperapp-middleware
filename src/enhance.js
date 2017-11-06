@@ -35,6 +35,11 @@ export default function(middleware) {
   function enhanceModules(module, prefix) {
     var namespace = prefix ? prefix + "." : ""
     module.actions = enhanceActions(module.actions, prefix)
+    module.actions.update = function(state, actions) {
+      return function(newState) {
+        return newState
+      }
+    }
 
     Object.keys(module.modules || {}).map(function(name) {
       enhanceModules(module.modules[name], namespace + name)
