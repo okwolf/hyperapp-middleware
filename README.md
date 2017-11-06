@@ -42,14 +42,14 @@ You can find the library in `window.middleware`.
 
 First, a few formal definitions with the shape of some common types of interest.
 
-* An `ActionResult` is a `State` slice, `Thunk`, empty object, or falsy value
+* An `ActionResult` is a `State` slice, empty object, or falsy value
 * An `Action` is a function that receives the current `State`, `Actions`, and `data` from the `Action` call. It returns an `ActionResult`
 * `ActionInfo` is an object that describes a call to an `Action` by its `name` and what `data` was passed to the `Action` function
 * An `HOAc`/`Middleware` is a function that takes an `Action` function as its argument and returns another `Action` function, or a falsy value to use the result of the original `Action` instead of the `Middleware`
 * An `HOAp` is a function that takes an `App` function and returns another `App` function
 
 ```js
-ActionResult = Partial<State> | Thunk | {} | falsy
+ActionResult = Partial<State> | {} | falsy
 Action = function(State, Actions, data: any): ActionResult
 ActionInfo = { name: string, data: any }
 HOAc = Middleware = function(Action): Action | falsy
@@ -80,7 +80,7 @@ enhance(
   // This is the new action function being returned
   // If you decide to bail early on this action
   // then return something falsy instead.
-  (state, actions, data) => {
+  (state, actions) => data => {
     // Feel free to call any additional actions before or after the original action
     actions.foo()
 
@@ -89,7 +89,7 @@ enhance(
     // If and when they so desire.
     // You can use modified state, actions,
     // or data if that's what you're into.
-    const result = action(state, actions, data)
+    const result = action(state, actions)(data)
 
     // Make sure to return what you want
     // the result of the action to be
@@ -100,43 +100,9 @@ enhance(
 })
 ```
 
-### `makeResolve`
-
-This HOHOAc (higher-order higher-order action) is a helper for creating HOAcs that are used for reacting to/modifying the results of`Action`s. The `Resolver` passed to `makeResolve` is used to create the `Resolve` function that receives `Action` results or a falsy value to skip this entirely. An HOAc is returned which can be converted to a usable HOAp with `enhance`.
-
-```js
-Resolve = function(State, Actions, result: any)
-Resolver = function(ActionInfo) : Resolve | falsy
-makeResolve = function(Resolver): HOAc
-```
-
-#### Usage
-
-Here is an example of using `makeResolve` to support actions returning a `Promise` for async updates.
-
-```js
-enhance([
-  makeResolve(
-    // Notice that action.name and action.data are available
-    // to inform you about the action that returned this result.
-    action =>
-      // This is the Resolve function
-      (state, actions, result) =>
-        // Always return what the new result should be for this action
-        result && typeof result.then === "function"
-          ? update => result.then(update)
-          : result
-  ),
-  // Other middleware for fun & profit
-  ...
-])(app)({
-...
-})
-```
-
 ### `makeUpdate`
 
-This function works similiarly to `makeResolve` except that it is called after a sync/async `Action` completes and is requesting to update the `State`. The `Updater` passed to `makeUpdate` is used to create the `Update` function for validating/modifying state updates or a falsy value to skip this entirely. An HOAc is returned which can be converted to a usable HOAp with `enhance`.
+This HOHOAc (higher-order higher-order action) is a helper for creating HOAcs that are called after an `Action` returns a partial `State` to update. The `Updater` passed to `makeUpdate` is used to create the `Update` function for validating/modifying state updates or a falsy value to skip this entirely. An HOAc is returned which can be converted to a usable HOAp with `enhance`.
 
 ```js
 Update = function(State, Actions, nextState: State)
@@ -165,6 +131,28 @@ enhance(
   ),
   ...
 )(app)({
+...
+})
+```
+
+And here is an example of using `makeUpdate` to support actions returning a `Promise` for async updates.
+
+```js
+enhance([
+  makeUpdate(
+    // Notice that action.name and action.data are available
+    // to inform you about the action that returned this result.
+    action =>
+      // This is the Update function
+      (state, actions, result) =>
+        // Always return what the new result should be for this action
+        result && typeof result.then === "function"
+          ? update => result.then(update)
+          : result
+  ),
+  // Other middleware for fun & profit
+  ...
+])(app)({
 ...
 })
 ```
