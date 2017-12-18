@@ -17,7 +17,7 @@
     "test": "jest --coverage --no-cache",
     "build": "npm run bundle && npm run minify",
     "bundle": "rollup -i src/index.js -o dist/middleware.js -m -f umd -n middleware",
-    "minify": "uglifyjs dist/middleware.js -o dist/middleware.js --mangle --compress warnings=false -p relative --source-map dist/middleware.js.map",
+    "minify": "uglifyjs dist/middleware.js -o dist/middleware.js -mc pure_funcs=Object.defineProperty --source-map includeSources,url=middleware.js.map",
     "prepare": "npm run build",
     "format": "prettier --semi false --write '{src,test}/**/*.js'"
   },
@@ -25,15 +25,15 @@
     "presets": "env"
   },
   "devDependencies": {
-    "babel-preset-env": "1.6.0",
-    "hyperapp": "^0.16.0",
+    "babel-preset-env": "^1.6.1",
+    "hyperapp": "^0.18.0",
     "jest": "^21.2.1",
-    "prettier": "^1.7.2",
-    "rollup": "^0.50.0",
-    "uglify-js": "^2.7.5"
+    "prettier": "^1.9.2",
+    "rollup": "^0.52.2",
+    "uglify-js": "^3.2.2"
   },
   "peerDependencies": {
-    "hyperapp": "^0.16.0"
+    "hyperapp": "^0.18.0"
   },
   "author": "Wolfgang Wedemeyer <wolf@okwolf.com>",
   "license": "MIT",

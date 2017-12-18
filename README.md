@@ -80,34 +80,31 @@ enhance(
   // This is the new action function being returned
   // If you decide to bail early on this action
   // then return something falsy instead.
-  (state, actions) => data => {
+  data => (state, actions) => {
     // Feel free to call any additional actions before or after the original action
     actions.foo()
 
     // The author of the middleware
     // is responsible for calling the action
     // If and when they so desire.
-    // You can use modified state, actions,
-    // or data if that's what you're into.
-    const result = action(state, actions)(data)
+    // You can use modified data, state,
+    // or actions if that's what you're into.
+    const result = action(data)(state, actions)
 
     // Make sure to return what you want
     // the result of the action to be
     return result
   }
-)(app)({
-...
-})
+)(app)(state, actions, view, document.body)
 ```
 
 ### `makeUpdate`
 
-This HOHOAc (higher-order higher-order action) is a helper for creating HOAcs that are called after an `Action` returns a partial `State` to update. The `Updater` passed to `makeUpdate` is used to create the `Update` function for validating/modifying state updates or a falsy value to skip this entirely. An HOAc is returned which can be converted to a usable HOAp with `enhance`.
+This helper is for creating HOAcs that are called after an `Action` returns a partial `State` to update. The `Updater` passed to `makeUpdate` is used to create the `Update` function for validating/modifying state updates. An HOAc is returned which can be converted to a usable HOAp with `enhance`.
 
 ```js
-Update = function(State, Actions, nextState: State)
-Updater = function(ActionInfo) : Update | falsy
-makeUpdate = function(Updater): HOAc
+Update = function(State, Actions, nextState: State) : State
+makeUpdate = function(Update): HOAc
 ```
 
 #### Usage
@@ -117,11 +114,10 @@ Here is an example of using `makeUpdate` to only allow state updates that includ
 ```js
 enhance(
   makeUpdate(
-    // Notice that action.name and action.data are available
-    // to inform you about the action that led to this state update.
-    action =>
       // This is the Update function
-      (state, actions, nextState) =>
+      // Notice that action.name and action.data are available
+      // to inform you about the action that led to this state update.
+      (state, action, nextState) =>
         // Return what you want the updated state to be
         // Use state if you want to leave the current value unchanged
         // Use nextState if the update is valid
@@ -130,31 +126,7 @@ enhance(
         nextState.valid ? nextState : state
   ),
   ...
-)(app)({
-...
-})
-```
-
-And here is an example of using `makeUpdate` to support actions returning a `Promise` for async updates.
-
-```js
-enhance([
-  makeUpdate(
-    // Notice that action.name and action.data are available
-    // to inform you about the action that returned this result.
-    action =>
-      // This is the Update function
-      (state, actions, result) =>
-        // Always return what the new result should be for this action
-        result && typeof result.then === "function"
-          ? update => result.then(update)
-          : result
-  ),
-  // Other middleware for fun & profit
-  ...
-])(app)({
-...
-})
+)(app)(state, actions, view, document.body)
 ```
 
 ## License

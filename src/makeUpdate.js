@@ -1,22 +1,10 @@
-export default function(updater) {
+export default function(update) {
   return function(action) {
-    return function(state, actions) {
-      return function(data) {
-        var update = updater({ name: action.name, data: data })
-        var result = action(state, actions)
-        var nextState = typeof result === "function" ? result(data) : result
-        if (update) {
-          var nextResult = update(state, actions, nextState)
-          if (typeof nextResult === "function") {
-            nextResult(function(nextResultState) {
-              actions.update(nextResultState)
-            })
-          } else {
-            return nextResult
-          }
-        } else {
-          return nextState
-        }
+    return function(data) {
+      return function(state, actions) {
+        var result = action(data)(state, actions)
+        result = update(state, { name: action.name, data: data }, result)
+        return result
       }
     }
   }

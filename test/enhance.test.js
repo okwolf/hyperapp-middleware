@@ -4,30 +4,32 @@ import { enhance } from "../src"
 test("implicit passthrough", done =>
   enhance(action => {
     expect(action.name).toBe("init")
-  })(app)({
-    actions: {
-      init: () => data => {
+  })(app)(
+    {},
+    {
+      init: data => {
         expect(data).toEqual({ some: "data" })
         done()
       }
     }
-  }).init({ some: "data" }))
+  ).init({ some: "data" }))
 
 test("explicit passthrough", done =>
   enhance(action => {
     expect(action.name).toBe("init")
     return action
-  })(app)({
-    actions: {
-      init: () => data => {
+  })(app)(
+    {},
+    {
+      init: data => {
         expect(data).toEqual({ some: "data" })
         done()
       }
     }
-  }).init({ some: "data" }))
+  ).init({ some: "data" }))
 
 test("receives action, state slice, actions, and action data", done =>
-  enhance(action => (state, actions) => data => {
+  enhance(action => data => (state, actions) => {
     expect(action.name).toBe("foo.fizz")
     expect(state).toEqual({ bar: "baz" })
 
@@ -36,8 +38,8 @@ test("receives action, state slice, actions, and action data", done =>
     })
     expect(data).toEqual({ fizz: "buzz" })
     done()
-  })(app)({
-    state: {
+  })(app)(
+    {
       foo: {
         bar: "baz"
       },
@@ -45,7 +47,7 @@ test("receives action, state slice, actions, and action data", done =>
         other: "state"
       }
     },
-    actions: {
+    {
       foo: {
         fizz: () => ({})
       },
@@ -53,18 +55,19 @@ test("receives action, state slice, actions, and action data", done =>
         baz: () => ({})
       }
     }
-  }).foo.fizz({ fizz: "buzz" }))
+  ).foo.fizz({ fizz: "buzz" }))
 
 const skipActionNamed = name =>
-  enhance(action => (state, actions) => data => {
+  enhance(action => data => {
     if (action.name !== name) {
-      action(state, actions)
+      return action(data)
     }
   })
 
 test("skip action", done => {
-  const appActions = skipActionNamed("foo")(app)({
-    actions: {
+  const appActions = skipActionNamed("foo")(app)(
+    {},
+    {
       foo: () => {
         throw new Error("should be skipped by middleware!")
       },
@@ -72,7 +75,7 @@ test("skip action", done => {
         baz: () => done()
       }
     }
-  })
+  )
   appActions.foo()
   appActions.bar.baz()
 })
@@ -80,51 +83,58 @@ test("skip action", done => {
 test("multiple middleware", done => {
   let middleware1Called = false
   let middleware2Called = false
+  let middleware3Called = false
   enhance([
-    action => (state, actions) => data => {
+    action => {
       expect(action.name).toBe("init")
-      expect(state).toEqual({ fizz: { buzz: "fizzbuzz" } })
-      expect(actions).toEqual({
-        init: expect.any(Function),
-        update: expect.any(Function)
-      })
-      expect(data).toEqual({ foo: "bar" })
       expect(middleware2Called).toBeFalsy()
+      expect(middleware3Called).toBeFalsy()
       middleware1Called = true
-      return action(state, actions)(data)
     },
-    action => (state, actions) => data => {
+    action => data => (state, actions) => {
       expect(action.name).toBe("init")
       expect(state).toEqual({ fizz: { buzz: "fizzbuzz" } })
       expect(actions).toEqual({
-        init: expect.any(Function),
-        update: expect.any(Function)
+        init: expect.any(Function)
       })
       expect(data).toEqual({ foo: "bar" })
       expect(middleware1Called).toBeTruthy()
+      expect(middleware2Called).toBeFalsy()
+      expect(middleware3Called).toBeFalsy()
       middleware2Called = true
-      return action(state, actions)(data)
+      return action(data)(state, actions)
     },
-    action => {
+    action => data => (state, actions) => {
       expect(action.name).toBe("init")
+      expect(state).toEqual({ fizz: { buzz: "fizzbuzz" } })
+      expect(actions).toEqual({
+        init: expect.any(Function)
+      })
+      expect(data).toEqual({ foo: "bar" })
+      expect(middleware1Called).toBeTruthy()
+      expect(middleware2Called).toBeTruthy()
+      expect(middleware3Called).toBeFalsy()
+      middleware3Called = true
+      return action(data)(state, actions)
     }
-  ])(app)({
-    state: {
+  ])(app)(
+    {
       fizz: {
         buzz: "fizzbuzz"
       }
     },
-    actions: {
-      init: () => data => {
+    {
+      init: data => {
         expect(data).toEqual({ foo: "bar" })
+        expect(middleware3Called).toBeTruthy()
         done()
       }
     }
-  }).init({ foo: "bar" })
+  ).init({ foo: "bar" })
 })
 
 test("state slices", () => {
-  const actions = enhance(action => (state, actions) => data => {
+  const actions = enhance(action => data => (state, actions) => {
     switch (action.name) {
       case "hello":
         expect(state).toEqual({ slice: { value: 0 } })
@@ -139,84 +149,19 @@ test("state slices", () => {
 
     const result = action(state, actions)
     return typeof result === "function" ? result(data) : result
-  })(app)({
-    state: {
+  })(app)(
+    {
       slice: {
         value: 0
       }
     },
-    actions: {
+    {
       hello: () => ({ message: "hello" }),
       slice: {
-        up: state => by => ({ value: state.value + by })
+        up: by => state => ({ value: state.value + by })
       }
     }
-  })
+  )
   actions.hello()
   actions.slice.up(2)
-})
-
-test("modules", () => {
-  const foo = {
-    state: {
-      value: 0
-    },
-    actions: {
-      up: state => data => ({ value: state.value + data })
-    },
-    modules: {
-      bar: {
-        state: {
-          text: "hello"
-        },
-        actions: {
-          change: () => text => ({ text })
-        }
-      }
-    }
-  }
-
-  const actions = enhance(action => (state, actions) => data => {
-    switch (action.name) {
-      case "hello":
-        expect(state).toEqual({
-          message: "",
-          foo: { value: 0, bar: { text: "hello" } }
-        })
-        expect(data).toBe("hello world")
-        break
-      case "foo.up":
-        expect(state).toEqual({
-          value: 0,
-          bar: {
-            text: "hello"
-          }
-        })
-        expect(data).toBe(3)
-        break
-      case "foo.bar.change":
-        expect(state).toEqual({
-          text: "hello"
-        })
-        expect(data).toBe("hola")
-        break
-      default:
-        throw new Error(`Unexpected action: ${action.name}`)
-    }
-
-    return action(state, actions, data)
-  })(app)({
-    state: {
-      message: ""
-    },
-    actions: {
-      hello: state => message => ({ message })
-    },
-    modules: {
-      foo
-    }
-  })
-  actions.hello("hello world")
-  actions.foo.up(3)
-  actions.foo.bar.change("hola")
 })
