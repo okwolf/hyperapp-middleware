@@ -1,44 +1,66 @@
 {
   "name": "hyperapp-middleware",
-  "version": "0.2.0",
-  "description": "Build HOAs for Hyperapp",
-  "main": "dist/middleware.js",
-  "jsnext:main": "src/index.js",
+  "version": "0.3.0-alpha.0",
+  "description": "Build middleware for Hyperapp",
+  "main": "dist/hyperappMiddleware.js",
   "module": "src/index.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/okwolf/hyperapp-middleware.git"
-  },
-  "files": [
-    "src",
-    "dist"
-  ],
-  "scripts": {
-    "test": "jest --coverage --no-cache",
-    "build": "npm run bundle && npm run minify",
-    "bundle": "rollup -i src/index.js -o dist/middleware.js -m -f umd -n middleware",
-    "minify": "uglifyjs dist/middleware.js -o dist/middleware.js --mangle --compress warnings=false -p relative --source-map dist/middleware.js.map",
-    "prepare": "npm run build",
-    "format": "prettier --semi false --write '{src,test}/**/*.js'"
-  },
-  "babel": {
-    "presets": "env"
+  "peerDependencies": {
+    "hyperapp": "2.x"
   },
   "devDependencies": {
-    "babel-preset-env": "1.6.0",
-    "hyperapp": "^0.15.1",
-    "jest": "^21.2.1",
-    "prettier": "^1.7.2",
-    "rollup": "^0.50.0",
-    "uglify-js": "^2.7.5"
+    "@babel/preset-env": "=7.4.3",
+    "eslint": "=5.16.0",
+    "eslint-plugin-compat": "=3.1.1",
+    "jest": "=24.7.1",
+    "prettier": "=1.17.0",
+    "rollup": "=1.10.0",
+    "uglify-js": "=3.5.4"
   },
-  "peerDependencies": {
-    "hyperapp": "^0.15.0"
+  "scripts": {
+    "clean": "npx rimraf coverage dist node_modules",
+    "format": "prettier --write '{src,test}/**/*.js'",
+    "format:check": "prettier --list-different {src,test}/**/*.js",
+    "lint": "eslint {src,test}/**/*.js",
+    "test": "jest --coverage --no-cache",
+    "bundle": "rollup -i src/index.js -o dist/hyperappMiddleware.js -m -f umd -n hyperappMiddleware",
+    "minify": "uglifyjs dist/hyperappMiddleware.js -o dist/hyperappMiddleware.js -mc pure_funcs=['Object.defineProperty'] --source-map includeSources,url=hyperappMiddleware.js.map",
+    "check": "npm run format:check && npm run lint && npm t",
+    "build": "npm run check && npm run bundle && npm run minify",
+    "prepare": "npm run build",
+    "release": "./pre-flight-tests && npm run clean && npm i && ./pre-flight-tests && git tag $npm_package_version && git push && git push --tags && npm publish --tag next"
   },
+  "prettier": {
+    "semi": false
+  },
+  "babel": {
+    "presets": [
+      "@babel/env"
+    ]
+  },
+  "eslintConfig": {
+    "extends": "eslint:recommended",
+    "plugins": [
+      "compat"
+    ],
+    "parserOptions": {
+      "sourceType": "module"
+    },
+    "env": {
+      "browser": true
+    },
+    "rules": {
+      "no-use-before-define": "error",
+      "compat/compat": "error"
+    }
+  },
+  "browserslist": [
+    "IE 10"
+  ],
   "author": "Wolfgang Wedemeyer <wolf@okwolf.com>",
   "license": "MIT",
+  "repository": "okwolf/hyperapp-middleware",
+  "homepage": "https://github.com/okwolf/hyperapp-middleware",
   "bugs": {
     "url": "https://github.com/okwolf/hyperapp-middleware/issues"
-  },
-  "homepage": "https://github.com/okwolf/hyperapp-middleware"
+  }
 }
