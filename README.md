@@ -40,23 +40,7 @@ You can find the library in `window.hyperappMiddleware`.
 
 ## API
 
-```js
-withMiddleware({
-  onState(nextState, prevState) {
-    // prevState will be undefined for initial state
-  },
-  onAction(action, state, props, data) {
-    // state is value before the action was processed
-    // props are from the [action, props] tuple, if used
-    // data is from second arg to dispatch, usually a DOM event
-  },
-  OnEffect(effect, state, props) {
-    // state will be whatever state was included in the tuple
-  }
-})(app)({
-  // ... the usual suspects
-})
-```
+> TODO:
 
 ## License
 
